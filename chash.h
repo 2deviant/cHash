@@ -2,7 +2,10 @@
 #define _CHASH_H
 
 #define KEY_LEN 32
-#define NULL    0
+#define CHASH_BOOL      unsigned char
+#define CHASH_TRUE      1
+#define CHASH_FALSE     0
+#define CHASH_INTEGER   unsigned long
 
 // unit of hash data storage
 typedef struct {
@@ -25,9 +28,17 @@ typedef struct {
     cHashlet *hashlets;
 
     // length of the aforementioned array
-    long size;
+    CHASH_INTEGER size;
 
 } cHash;
 
+
+// allocate memory for the hash
+CHASH_BOOL cHash_init(cHash *hash, CHASH_INTEGER length) {
+
+    hash->size = length;
+
+    return CHASH_TRUE;
+}
 
 #endif
