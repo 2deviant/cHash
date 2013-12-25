@@ -7,6 +7,12 @@
 #define CHASH_FALSE     0
 #define CHASH_INTEGER   unsigned long
 
+#ifdef OSX
+#include <stdlib.h>
+#else
+#include <malloc.h>
+#endif
+
 // unit of hash data storage
 typedef struct {
 
@@ -36,7 +42,13 @@ typedef struct {
 // allocate memory for the hash
 CHASH_BOOL cHash_init(cHash *hash, CHASH_INTEGER length) {
 
+    // set the size
     hash->size = length;
+
+    // allocate RAM
+    if(!(hash->hashlets = (cHashlet *) malloc(length * sizeof(cHashlet))))
+        // return false if RAM is lacking
+        return CHASH_FALSE;
 
     return CHASH_TRUE;
 }
