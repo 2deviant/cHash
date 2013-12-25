@@ -3,6 +3,8 @@
 
 int main() {
 
+    cHash hash;
+
 
     return 0;
 }
