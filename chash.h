@@ -89,23 +89,33 @@ CHASH_CHASH cHash_hash(char *key, CHASH_INTEGER length) {
     return hash;
 }
 
+// set
 void cHash_set(cHash *hash, char *key, long value) {
 
+    // compute the index of the *key
     int index = cHash_hash(key, strlen(key)) % hash->size;
     
+    // if index is unused
     if(hash->hashlets[index].next == CHASH_EMPTY) {
+        // store the key
         strcpy(hash->hashlets[index].key, key);
+        // store the value
         hash->hashlets[index].value = value;
+        // set the .next to indicate the end of the hashlet chain
         hash->hashlets[index].next = (struct cHashlet *)CHASH_SET;
     }
 
 }
 
+// get
 long cHash_get(cHash *hash, char *key) {
 
+    // compute the index of the *key
     int index = cHash_hash(key, strlen(key)) % hash->size;
 
+    // if the hashlet is set and at the end of the chain
     if(hash->hashlets[index].next == (struct cHashlet *)CHASH_SET)
+        // return the value
         return hash->hashlets[index].value;
 
     return CHASH_FALSE;
