@@ -67,7 +67,7 @@ CHASH_BOOL cHash_init(cHash *hash, CHASH_INTEGER length) {
 
 CHASH_CHASH cHash_hash(char *key, CHASH_INTEGER length) {
 
-    int i;
+    CHASH_INTEGER i;
 
     // initialize the hashing algorithm
     CHASH_CHASH hash  = 0xbee5e9b976d241ac;
@@ -92,7 +92,7 @@ CHASH_CHASH cHash_hash(char *key, CHASH_INTEGER length) {
 void cHash_set(cHash *hash, char *key, long value) {
 
     // compute the index of the *key
-    int index = cHash_hash(key, strlen(key)) % hash->size;
+    CHASH_INTEGER index = cHash_hash(key, strlen(key)) % hash->size;
     
     // acquire the head hashlet
     cHashlet *link = &hash->hashlets[index];
@@ -100,7 +100,7 @@ void cHash_set(cHash *hash, char *key, long value) {
     // if index is unused, initialize it
     if(link->next == CHASH_EMPTY) {
         #ifdef ebug
-            printf("Unused index %d.  %s = %ld\n", index, key, value);
+            printf("Unused index %ld.  %s = %ld\n", index, key, value);
         #endif
         // store the key
         strcpy(link->key, key);
@@ -113,7 +113,7 @@ void cHash_set(cHash *hash, char *key, long value) {
     }
 
     #ifdef ebug
-        printf("Hash collision. %s vs %s\n", link->key, key);
+        printf("Index collision. %s vs %s\n", link->key, key);
     #endif
     // if the index is used, loop through the chain
     while(1) {
@@ -141,7 +141,7 @@ void cHash_set(cHash *hash, char *key, long value) {
 
     // new key-value pair
     #ifdef ebug
-        printf("New entry in chain %d. %s = %ld\n", index, key, value);
+        printf("New entry in chain %ld. %s = %ld\n", index, key, value);
     #endif
 
     // allocate the ram
@@ -168,7 +168,7 @@ void cHash_set(cHash *hash, char *key, long value) {
 long cHash_get(cHash *hash, char *key) {
 
     // compute the index of the *key
-    int index = cHash_hash(key, strlen(key)) % hash->size;
+    CHASH_INTEGER index = cHash_hash(key, strlen(key)) % hash->size;
 
     // acquire the head hashlet
     cHashlet *link = &hash->hashlets[index];
@@ -182,7 +182,7 @@ long cHash_get(cHash *hash, char *key) {
     }
 
     #ifdef ebug
-        printf("Searching for %s in chain %d.\n", key, index);
+        printf("Searching for %s in chain %ld.\n", key, index);
     #endif
     // otherwise travel down the chain
     while(1) {
