@@ -9,8 +9,7 @@
 #define CHASH_EMPTY     (struct cHashlet *)0
 #define CHASH_SET       (struct cHashlet *)1
 
-#define KEY_LEN         32
-#define OCTET           8
+#define CHASH_OCTET     8
 
 #ifdef OSX
 #include <stdlib.h>
@@ -23,8 +22,8 @@
 // unit of hash data storage
 typedef struct {
 
-    // key sgtring
-    char key[KEY_LEN];
+    // hash(key)
+    CHASH_CHASH key;
 
     // value
     long value;
@@ -59,12 +58,14 @@ CHASH_BOOL cHash_init(cHash *hash, CHASH_INTEGER length) {
         // return false if RAM is lacking
         return CHASH_FALSE;
 
+    // initialize the hashlets
     for(i = 0; i < length; i++)
         hash->hashlets[i].next = CHASH_EMPTY;
 
     return CHASH_TRUE;
 }
 
+// compute the hash of of 'length' bytes located at *key
 CHASH_CHASH cHash_hash(char *key, CHASH_INTEGER length) {
 
     CHASH_INTEGER i;
@@ -74,12 +75,13 @@ CHASH_CHASH cHash_hash(char *key, CHASH_INTEGER length) {
     CHASH_CHASH octet = 0x9147e36a04ed7af0;
 
     // go through the key
-    for(i = 0; i < length; i += OCTET) {
+    for(i = 0; i < length; i += CHASH_OCTET) {
 
         // take an octet, or less, from key
-        memcpy(&octet, &key[i], length - i > OCTET ? OCTET : length - i);
+        memcpy(&octet, &key[i],
+                length - i > CHASH_OCTET ? CHASH_OCTET : length - i);
 
-        // hash it!
+        // hash it
         hash *= 0xd9afdeb758590198;
         hash *= hash + octet;
         hash ^= octet;
@@ -91,119 +93,85 @@ CHASH_CHASH cHash_hash(char *key, CHASH_INTEGER length) {
 // set
 void cHash_set(cHash *hash, char *key, long value) {
 
-    // compute the index of the *key
-    CHASH_INTEGER index = cHash_hash(key, strlen(key)) % hash->size;
-    
+    // hash the key
+    CHASH_CHASH hkey = cHash_hash(key, strlen(key));
+
     // acquire the head hashlet
-    cHashlet *link = &hash->hashlets[index];
+    cHashlet *hashlet = &hash->hashlets[hkey % hash->size];
 
     // if index is unused, initialize it
-    if(link->next == CHASH_EMPTY) {
-        #ifdef ebug
-            printf("Unused index %ld.  %s = %ld\n", index, key, value);
-        #endif
+    if(hashlet->next == CHASH_EMPTY) {
         // store the key
-        strcpy(link->key, key);
+        hashlet->key = hkey;
         // store the value
-        link->value = value;
+        hashlet->value = value;
         // set the .next to indicate the end of the hashlet chain
-        link->next = CHASH_SET;
+        hashlet->next = CHASH_SET;
         // done
         return;
     }
 
-    #ifdef ebug
-        printf("Index collision. %s vs %s\n", link->key, key);
-    #endif
     // if the index is used, loop through the chain
     while(1) {
-        #ifdef ebug
-            printf("... %s\n", link->key);
-        #endif
 
         // if the key exactly matches an existing key, overwrite the value
-        if(!strcmp(link->key, key)) {
-            #ifdef ebug
-                printf("Overwrite.  %s = %ld\n", key, value);
-            #endif
-            link->value = value;
+        if(hashlet->key == hkey) {
+            hashlet->value = value;
             return;
         }
 
         // stop when the end of the chain has been reached
-        if(link->next == CHASH_SET)
+        if(hashlet->next == CHASH_SET)
             break;
 
-        // proceed to the next link
-        link = (cHashlet *)link->next;
+        // proceed to the next hashlet
+        hashlet = (cHashlet *)hashlet->next;
 
     }
 
     // new key-value pair
-    #ifdef ebug
-        printf("New entry in chain %ld. %s = %ld\n", index, key, value);
-    #endif
 
     // allocate the ram
     // DO TO: get the ram from the incrementally-reallocated pool
-    if(!(link->next = (struct cHashlet *) malloc(sizeof(cHashlet)))) {
-        #ifdef ebug
-            printf("Unable to allocate RAM for the new hashlet.");
-        #endif
+    if(!(hashlet->next = (struct cHashlet *) malloc(sizeof(cHashlet))))
         return;
-    }
 
-    // point the link to the newly-created hashlet
-    link = (cHashlet *)link->next;
+    // point the hashlet to the newly-created hashlet
+    hashlet = (cHashlet *)hashlet->next;
 
     // store the key
-    strcpy(link->key, key);
+    hashlet->key = hkey;
     // store the value
-    link->value = value;
-    // bookkeeping
-    link->next = CHASH_SET;
+    hashlet->value = value;
+    // set the .next to indicate the end of the hashlet chain
+    hashlet->next = CHASH_SET;
 }
 
 // get
 long cHash_get(cHash *hash, char *key) {
 
-    // compute the index of the *key
-    CHASH_INTEGER index = cHash_hash(key, strlen(key)) % hash->size;
+    // hash the key
+    CHASH_CHASH hkey = cHash_hash(key, strlen(key));
 
     // acquire the head hashlet
-    cHashlet *link = &hash->hashlets[index];
+    cHashlet *hashlet = &hash->hashlets[hkey % hash->size];
 
     // if the hash is undefined, return false
-    if(link->next == CHASH_EMPTY) {
-        #ifdef ebug
-            printf("Key %s does not exist.\n", key);
-        #endif
+    if(hashlet->next == CHASH_EMPTY)
         return CHASH_FALSE;
-    }
 
-    #ifdef ebug
-        printf("Searching for %s in chain %ld.\n", key, index);
-    #endif
-    // otherwise travel down the chain
+    // otherwise, travel down the chain
     while(1) {
-        #ifdef ebug
-            printf("... currently on %s\n", link->key);
-        #endif
-        // if the key matches, return the value
-        if(!strcmp(link->key, key))
-            return link->value;
+        // if the hash of the key matches, return the value
+        if(hashlet->key == hkey)
+            return hashlet->value;
 
         // stop when the end of the chain has been reached
-        if(link->next == CHASH_SET) {
-            #ifdef ebug
-                printf("... chain ends with %s\n", link->key);
-            #endif
+        if(hashlet->next == CHASH_SET)
             break;
-        }
 
-        // proceed to the next link
-        link = (cHashlet *)link->next;
-
+        // proceed to the next hashlet
+        hashlet = (cHashlet *)hashlet->next;
     }
 
     // return false if the key doens't exist
