@@ -2,12 +2,14 @@
 #define _CHASH_H
 
 #define CHASH_BOOL      unsigned char
-#define CHASH_TRUE      1
 #define CHASH_FALSE     0
 #define CHASH_INTEGER   long
 #define CHASH_CHASH     unsigned long long
 #define CHASH_EMPTY     (struct cHashlet *)0
 #define CHASH_SET       (struct cHashlet *)1
+
+#define CHASH_POOL_SIZE         5
+#define CHASH_POOL_INCREMENT    5
 
 #define CHASH_OCTET     8
 
@@ -36,17 +38,26 @@ typedef struct {
 // hash structure
 typedef struct {
 
-    // pointer to the array of hashlets
+    // pointer to the array of primary hashlets
     cHashlet *hashlets;
 
     // length of the aforementioned array
     CHASH_INTEGER size;
 
+    // pointer to the array of the hashlet chain pool
+    cHashlet *hashlet_pool;
+
+    // current hashlet pool size
+    CHASH_INTEGER pool_size;
+
+    // current hashlet pool index
+    CHASH_INTEGER pool_index;
+
 } cHash;
 
 
-// allocate memory for the hash
-CHASH_BOOL cHash_init(cHash *hash, CHASH_INTEGER length) {
+// initialize the hash
+void cHash_init(cHash *hash, CHASH_INTEGER length) {
 
     CHASH_INTEGER i;
 
@@ -54,15 +65,60 @@ CHASH_BOOL cHash_init(cHash *hash, CHASH_INTEGER length) {
     hash->size = length;
 
     // allocate RAM
-    if(!(hash->hashlets = (cHashlet *) malloc(length * sizeof(cHashlet))))
-        // return false if RAM is lacking
-        return CHASH_FALSE;
+    if(!(hash->hashlets = (cHashlet *) malloc(length * sizeof(cHashlet)))) {
+        printf("Unable to allocate RAM for the hashlets.\n");
+        exit(1);
+    }
 
     // initialize the hashlets
     for(i = 0; i < length; i++)
         hash->hashlets[i].next = CHASH_EMPTY;
 
-    return CHASH_TRUE;
+    /* initilize the hashlet pool */
+
+    // allocate the RAM
+    if(!(hash->hashlet_pool
+                = (cHashlet *) malloc(CHASH_POOL_SIZE * sizeof(cHashlet)))) {
+        printf("Unable to allocate initial RAM for the hashlet pool.\n");
+        exit(1);
+    }
+
+    // initialize the pool variables
+    hash->pool_size = CHASH_POOL_SIZE;
+    hash->pool_index = 0;
+}
+
+struct cHashlet *cHash_allocate_hashlet(cHash *hash) {
+
+    // if the hashlet pool has been exhausted
+    if(hash->pool_index == hash->pool_size) {
+
+        // increase the size of the pool
+        hash->pool_size += CHASH_POOL_INCREMENT;
+
+        // allocate more hashlets
+        if(!(hash->hashlet_pool
+                    = (cHashlet *) realloc(
+                        hash->hashlet_pool,
+                        hash->pool_size * sizeof(cHashlet)
+                        )
+                    )
+                ) {
+            printf("Unable to allocate additional RAM for hashlet pool.\n");
+            exit(1);
+        }
+
+        #ifdef ebug
+            printf("Increasing hashlet pool size to %ld\n", hash->pool_size );
+        #endif
+    }
+
+    #ifdef ebug
+        printf("Allocating an extra hashlet: %ld\n", hash->pool_index);
+    #endif
+
+    // return the pointer to an empty hashlet
+    return (struct cHashlet *)&hash->hashlet_pool[hash->pool_index++];
 }
 
 // compute the hash of of 'length' bytes located at *key
@@ -129,15 +185,10 @@ void cHash_set(cHash *hash, char *key, long value) {
 
     }
 
-    // new key-value pair
+    /* new key-value pair */
 
-    // allocate the ram
-    // DO TO: get the ram from the incrementally-reallocated pool
-    if(!(hashlet->next = (struct cHashlet *) malloc(sizeof(cHashlet))))
-        return;
-
-    // point the hashlet to the newly-created hashlet
-    hashlet = (cHashlet *)hashlet->next;
+    // appropriate the ram and attach the newly-created hashlet to the chain
+    hashlet = (cHashlet *)(hashlet->next = cHash_allocate_hashlet(hash));
 
     // store the key
     hashlet->key = hkey;
@@ -162,6 +213,7 @@ long cHash_get(cHash *hash, char *key) {
 
     // otherwise, travel down the chain
     while(1) {
+
         // if the hash of the key matches, return the value
         if(hashlet->key == hkey)
             return hashlet->value;
