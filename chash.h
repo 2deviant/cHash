@@ -76,8 +76,8 @@ CHASH_CHASH cHash_hash(char *key, CHASH_INTEGER length) {
     // go through the key
     for(i = 0; i < length; i += OCTET) {
 
-        // take an octet from key
-        memcpy(&octet, &key[i], i < length ? OCTET : i - length);
+        // take an octet, or less, from key
+        memcpy(&octet, &key[i], length - i > OCTET ? OCTET : length - i);
 
         // hash it!
         hash *= 0xd9afdeb758590198;
