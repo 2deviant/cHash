@@ -121,26 +121,28 @@ struct cHashlet *cHash_allocate_hashlet(cHash *hash) {
     return (struct cHashlet *)&hash->hashlet_pool[hash->pool_index++];
 }
 
-// compute the hash of of 'length' bytes located at *key
+
+// compute the FNV-1 hash of of 'length' bytes located at *key
 CHASH_CHASH cHash_hash(char *key, CHASH_INTEGER length) {
 
     CHASH_INTEGER i;
 
-    // initialize the hashing algorithm
-    CHASH_CHASH hash  = 0xbee5e9b976d241ac;
+    // offset basis
+    CHASH_CHASH hash  = 0xCBF29CE484222000;
+
+    // random octet for keys less than eight bytes
     CHASH_CHASH octet = 0x9147e36a04ed7af0;
 
-    // go through the key
+    // go through the key octet by octet
     for(i = 0; i < length; i += CHASH_OCTET) {
 
         // take an octet, or less, from key
         memcpy(&octet, &key[i],
                 length - i > CHASH_OCTET ? CHASH_OCTET : length - i);
 
-        // hash it
-        hash *= 0xd9afdeb758590198;
-        hash *= hash + octet;
+        // FNV-1 hash
         hash ^= octet;
+        hash *= 0x100000001B3;
     }
 
     return hash;
