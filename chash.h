@@ -6,7 +6,6 @@
  *
  */
 
-
 #ifndef _CHASH_H
 #define _CHASH_H
 
@@ -18,8 +17,12 @@
 #define CHASH_EMPTY     (struct cHashlet *)0
 #define CHASH_SET       (struct cHashlet *)1
 
-#define CHASH_POOL_SIZE         5
-#define CHASH_POOL_INCREMENT    5
+/*
+ * RAM is allocated in steps of this many hashlets:
+ *
+ */
+
+#define CHASH_POOL      1024
 
 /*
  * Darwin implementation of gcc keeps malloc() in stdlib.h, not malloc.h
@@ -34,7 +37,7 @@
 
 #include <string.h>
 
-// unit of hash data storage
+// unit of hash table storage
 typedef struct {
 
     // hash(key)
@@ -51,7 +54,7 @@ typedef struct {
 // hash structure
 typedef struct {
 
-    // pointer to the array of primary hashlets
+    // pointer to the array of head hashlets
     cHashlet *hashlets;
 
     // length of the aforementioned array
@@ -85,21 +88,12 @@ void cHash_init(cHash *hash, CHASH_INTEGER length) {
         exit(1);
     }
 
-    // initialize the hashlets
+    // initialize the head hashlets
     for(i = 0; i < length; i++)
         hash->hashlets[i].next = CHASH_EMPTY;
 
-    /* initilize the hashlet pool */
-
-    // allocate the RAM for the linked list hashlet pool
-    if(!(hash->hashlet_pool
-                = (cHashlet *) malloc(CHASH_POOL_SIZE * sizeof(cHashlet)))) {
-        printf("Unable to allocate initial RAM for the hashlet pool.\n");
-        exit(1);
-    }
-
-    // initialize the hashlet pool variables
-    hash->pool_size  = CHASH_POOL_SIZE;
+    // initialize the hashlet pool
+    hash->pool_size  = 0;
     hash->pool_index = 0;
 }
 
@@ -107,18 +101,20 @@ void cHash_init(cHash *hash, CHASH_INTEGER length) {
 // of the hashlet pool if necessary
 struct cHashlet *cHash_allocate_hashlet(cHash *hash) {
 
-    // if the hashlet pool has been exhausted
-    if(hash->pool_index == hash->pool_size)
-        // increase the size of the pool and allocate more hashlets
+    // if the hashlet pool has been exhausted (e.g. on first call)
+    if(hash->pool_index == hash->pool_size) {
+        // allocate more hashlets
+        // NOTE: the original pointer to the hashlet pool is overwritten
         if(!(hash->hashlet_pool
-            = (cHashlet *) realloc(hash->hashlet_pool,
-                    (hash->pool_size += CHASH_POOL_INCREMENT) * sizeof(cHashlet)
-                )
-            )
-        ) {
+                    = (cHashlet *) malloc(CHASH_POOL * sizeof(cHashlet)))) {
             printf("Unable to allocate additional RAM for the hashlet pool.\n");
             exit(1);
         }
+
+        // reset the counters
+        hash->pool_size  = CHASH_POOL;
+        hash->pool_index = 0;
+    }
 
     // return the pointer to an empty hashlet
     return (struct cHashlet *)&hash->hashlet_pool[hash->pool_index++];
@@ -181,6 +177,7 @@ void cHash_set(cHash *hash, char *key, long value) {
         hashlet = (cHashlet *)hashlet->next;
 
     }
+            
 
     /* new key-value pair */
 
@@ -193,6 +190,7 @@ void cHash_set(cHash *hash, char *key, long value) {
     hashlet->value = value;
     // set the .next to indicate the end of the hashlet chain
     hashlet->next = CHASH_SET;
+
 }
 
 // get
