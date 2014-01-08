@@ -49,6 +49,10 @@ typedef struct {
     // pointer to the next hashlet, if one exists
     struct cHashlet *next;
 
+    #ifdef statistics
+    CHASH_INTEGER chain_length;
+    #endif
+
 } cHashlet;
 
 // hash structure
@@ -89,12 +93,17 @@ void cHash_init(cHash *hash, CHASH_INTEGER length) {
     }
 
     // initialize the head hashlets
-    for(i = 0; i < length; i++)
+    for(i = 0; i < length; i++) {
+        #ifdef statistics
+        hash->hashlets[i].chain_length = 1;
+        #endif
         hash->hashlets[i].next = CHASH_EMPTY;
+    }
 
     // initialize the hashlet pool
     hash->pool_size  = 0;
     hash->pool_index = 0;
+
 }
 
 // allocate a hashlet for a linked list, increase the size
@@ -148,8 +157,15 @@ void cHash_set(cHash *hash, char *key, long value) {
     // acquire the head hashlet
     cHashlet *hashlet = &hash->hashlets[hkey % hash->size];
 
+    #ifdef statistics
+    // self-explanatory
+    CHASH_INTEGER chain_length = 0;
+    cHashlet *head_hashlet = hashlet;
+    #endif
+
     // if index is unused, initialize it
     if(hashlet->next == CHASH_EMPTY) {
+
         // store the key
         hashlet->key = hkey;
         // store the value
@@ -162,6 +178,11 @@ void cHash_set(cHash *hash, char *key, long value) {
 
     // if the index is used, loop through the chain
     while(1) {
+
+        #ifdef statistics
+        // self-explanatory
+        chain_length++;
+        #endif
 
         // if the key exactly matches an existing key, overwrite the value
         if(hashlet->key == hkey) {
@@ -177,9 +198,13 @@ void cHash_set(cHash *hash, char *key, long value) {
         hashlet = (cHashlet *)hashlet->next;
 
     }
-            
 
     /* new key-value pair */
+
+    #ifdef statistics
+    // update the chain length and store it in the head hashlet
+    head_hashlet->chain_length = ++chain_length;
+    #endif
 
     // appropriate the RAM and attach the newly-created hashlet to the chain
     hashlet = (cHashlet *)(hashlet->next = cHash_allocate_hashlet(hash));
