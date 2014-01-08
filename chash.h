@@ -1,22 +1,35 @@
+/*
+ * cHash v0.1 by Val Tenyotkin (val@tenyotk.in)
+ *
+ * cHash is an hash table implementation using separate chaining and linked
+ * lists.  The table does not store the key, only the hash of the key.  
+ *
+ */
+
+
 #ifndef _CHASH_H
 #define _CHASH_H
 
-#define CHASH_BOOL      unsigned char
+#include <stdio.h>
+
 #define CHASH_FALSE     0
 #define CHASH_INTEGER   long
-#define CHASH_CHASH     unsigned long long
+#define CHASH_CHASH     uint64_t
 #define CHASH_EMPTY     (struct cHashlet *)0
 #define CHASH_SET       (struct cHashlet *)1
 
 #define CHASH_POOL_SIZE         5
 #define CHASH_POOL_INCREMENT    5
 
-#define CHASH_OCTET     8
+/*
+ * Darwin implementation of gcc keeps malloc() in stdlib.h, not malloc.h
+ *
+ */
 
 #ifdef OSX
-#include <stdlib.h>
+    #include <stdlib.h>
 #else
-#include <malloc.h>
+    #include <malloc.h>
 #endif
 
 #include <string.h>
@@ -46,6 +59,8 @@ typedef struct {
 
     // pointer to the array of the hashlet chain pool
     cHashlet *hashlet_pool;
+    // the purpose of the pool is to allocate the RAM in bulk in order to avoid
+    // repetitive malloc() calls for every index collision
 
     // current hashlet pool size
     CHASH_INTEGER pool_size;
@@ -76,74 +91,54 @@ void cHash_init(cHash *hash, CHASH_INTEGER length) {
 
     /* initilize the hashlet pool */
 
-    // allocate the RAM
+    // allocate the RAM for the linked list hashlet pool
     if(!(hash->hashlet_pool
                 = (cHashlet *) malloc(CHASH_POOL_SIZE * sizeof(cHashlet)))) {
         printf("Unable to allocate initial RAM for the hashlet pool.\n");
         exit(1);
     }
 
-    // initialize the pool variables
-    hash->pool_size = CHASH_POOL_SIZE;
+    // initialize the hashlet pool variables
+    hash->pool_size  = CHASH_POOL_SIZE;
     hash->pool_index = 0;
 }
 
+// allocate a hashlet for a linked list, increase the size
+// of the hashlet pool if necessary
 struct cHashlet *cHash_allocate_hashlet(cHash *hash) {
 
     // if the hashlet pool has been exhausted
-    if(hash->pool_index == hash->pool_size) {
-
-        // increase the size of the pool
-        hash->pool_size += CHASH_POOL_INCREMENT;
-
-        // allocate more hashlets
+    if(hash->pool_index == hash->pool_size)
+        // increase the size of the pool and allocate more hashlets
         if(!(hash->hashlet_pool
-                    = (cHashlet *) realloc(
-                        hash->hashlet_pool,
-                        hash->pool_size * sizeof(cHashlet)
-                        )
-                    )
-                ) {
-            printf("Unable to allocate additional RAM for hashlet pool.\n");
+            = (cHashlet *) realloc(hash->hashlet_pool,
+                    (hash->pool_size += CHASH_POOL_INCREMENT) * sizeof(cHashlet)
+                )
+            )
+        ) {
+            printf("Unable to allocate additional RAM for the hashlet pool.\n");
             exit(1);
         }
-
-        #ifdef ebug
-            printf("Increasing hashlet pool size to %ld\n", hash->pool_size );
-        #endif
-    }
-
-    #ifdef ebug
-        printf("Allocating an extra hashlet: %ld\n", hash->pool_index);
-    #endif
 
     // return the pointer to an empty hashlet
     return (struct cHashlet *)&hash->hashlet_pool[hash->pool_index++];
 }
 
-
-// compute the FNV-1 hash of of 'length' bytes located at *key
+// compute the Jenkins hash of 'length' bytes located at *key
 CHASH_CHASH cHash_hash(char *key, CHASH_INTEGER length) {
 
     CHASH_INTEGER i;
+    CHASH_CHASH hash;
 
-    // offset basis
-    CHASH_CHASH hash  = 0xCBF29CE484222000;
+    for(hash = i = 0; i < length; i++) {
+        hash += key[i];
+        hash += (hash << 10);
+        hash ^= (hash >> 6); 
+    }   
 
-    // random octet for keys less than eight bytes
-    CHASH_CHASH octet = 0x9147e36a04ed7af0;
-
-    // go through the key octet by octet
-    for(i = 0; i < length; i += CHASH_OCTET) {
-
-        // take an octet, or less, from key
-        memcpy(&octet, &key[i],
-                length - i > CHASH_OCTET ? CHASH_OCTET : length - i);
-
-        // FNV-1 hash
-        hash ^= octet;
-        hash *= 0x100000001B3;
-    }
+    hash += (hash << 3); 
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
 
     return hash;
 }
@@ -182,14 +177,14 @@ void cHash_set(cHash *hash, char *key, long value) {
         if(hashlet->next == CHASH_SET)
             break;
 
-        // proceed to the next hashlet
+        // proceed to the next hashlet in the linked list
         hashlet = (cHashlet *)hashlet->next;
 
     }
 
     /* new key-value pair */
 
-    // appropriate the ram and attach the newly-created hashlet to the chain
+    // appropriate the RAM and attach the newly-created hashlet to the chain
     hashlet = (cHashlet *)(hashlet->next = cHash_allocate_hashlet(hash));
 
     // store the key
