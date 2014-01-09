@@ -1,6 +1,5 @@
 compiler=gcc
-# -DOSX is for Darwin (OS X) only, remove it otherwise
-options=-DOSX -Wall -I. -Dstatistics
+options=-Wall -I. -Dstatistics
 
 all: test/test example
 
@@ -14,4 +13,4 @@ chash.o: chash.c chash.h
 	$(compiler) $(options) -c chash.c
 
 clean:
-	- rm chash.o test/test
+	- rm chash.o test/test example test/numbers.txt test/report.txt

@@ -2,10 +2,7 @@
  *
  * cHash v0.1 by Val Tenyotkin (val@tenyotk.in)
  *
- * A hash table implementation using separate chaining with linked lists.  The
- * table does not store the key, only the Jenkins hash of the key for hash
- * collision resolution. Linked lists are allocated dynamically in increments of
- * CHASH_POOL links (also hashlets) at a time.
+ * See README.md for details.
  *
  */
 
@@ -14,13 +11,8 @@
 
 #include <stdio.h>
 #include <string.h>
-
-// Darwin implementation of gcc/clang keeps malloc() in stdlib.h, not malloc.h
-#ifdef OSX
-    #include <stdlib.h>
-#else
-    #include <malloc.h>
-#endif
+#include <stdint.h>
+#include <stdlib.h>
 
 #define CHASH_FALSE     0
 #define CHASH_INTEGER   long
@@ -69,14 +61,14 @@ typedef struct {
 
     // current hashlet pool index
     CHASH_INTEGER pool_index;
+
 } cHash;
 
 
 // initialize the hash
 void cHash_init(cHash *hash, CHASH_INTEGER length);
 
-// allocate a hashlet for a linked list, increase the size
-// of the hashlet pool if necessary
+// allocate a hashlet for a linked list
 struct cHashlet *cHash_allocate_hashlet(cHash *hash);
 
 // compute the Jenkins hash of 'length' bytes located at *key

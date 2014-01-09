@@ -2,10 +2,7 @@
  *
  * cHash v0.1 by Val Tenyotkin (val@tenyotk.in)
  *
- * A hash table implementation using separate chaining with linked lists.  The
- * table does not store the key, only the Jenkins hash of the key for hash
- * collision resolution. Linked lists are allocated dynamically in increments of
- * CHASH_POOL links (also hashlets) at a time.
+ * See README.md for details.
  *
  */
 

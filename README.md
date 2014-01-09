@@ -30,10 +30,6 @@ int main() {
 ```bash
 gcc -I. chash.c example.c -o example
 ```
-If the code is complied in Darwin (e.g. OS X), add `-DOSX`:
-```bash
-gcc -DOSX -I. chash.c example.c -o example
-```
 If desired, `chash.c` can be precompiled.
 ### Testing
 To compile the test suite:
