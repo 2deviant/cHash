@@ -1,5 +1,5 @@
 # cHash
-cHash is a C hash table implementation.
+cHash is a hash table implementation in C.
 ## Use
 ### Code
 ```C
