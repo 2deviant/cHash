@@ -23,7 +23,7 @@
 // RAM is allocated in steps of this many hashlets:
 #define CHASH_POOL      1024
 
-// unit of hash table storage
+// unit of hash table storage, hereafter as hashlet
 typedef struct {
 
     // hash(key)
@@ -36,13 +36,13 @@ typedef struct {
     struct cHashlet *next;
 
     #ifdef statistics
-    CHASH_INTEGER chain_length;
+    CHASH_INTEGER list_length;
     #endif
 
 } cHashlet;
 
 
-// hash structure
+// hash table structure
 typedef struct {
 
     // pointer to the array of head hashlets
@@ -51,7 +51,7 @@ typedef struct {
     // length of the aforementioned array
     CHASH_INTEGER size;
 
-    // pointer to the array of the hashlet chain pool
+    // pointer to the array of the hashlet pool
     cHashlet *hashlet_pool;
     // the purpose of the pool is to allocate the RAM in bulk in order to avoid
     // repetitive malloc() calls for every index collision

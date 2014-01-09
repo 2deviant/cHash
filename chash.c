@@ -8,32 +8,32 @@
 
 #include <chash.h>
 
-// initialize the hash
-void cHash_init(cHash *hash, CHASH_INTEGER length) {
+void cHash_fatal_error(char *message) {
+    puts(message);
+    exit(1);
+}
 
-    CHASH_INTEGER i;
+// initialize the hash table
+void cHash_init(cHash *hash, CHASH_INTEGER length) {
 
     // set the size
     hash->size = length;
 
     // allocate RAM
-    if(!(hash->hashlets = (cHashlet *) malloc(length * sizeof(cHashlet)))) {
-        fprintf(stderr, "Unable to allocate RAM for the hashlets.\n");
-        exit(1);
-    }
+    if(!(hash->hashlets = (cHashlet *) malloc(length * sizeof(cHashlet))))
+        cHash_fatal_error("Unable to allocate RAM for the hashlets.\n");
 
     // initialize the head hashlets
-    for(i = 0; i < length; i++) {
+    while(length--) {
         #ifdef statistics
-        hash->hashlets[i].chain_length = 1;
+        hash->hashlets[length].list_length = 1;
         #endif
-        hash->hashlets[i].next = CHASH_EMPTY;
+        hash->hashlets[length].next = CHASH_EMPTY;
     }
 
     // initialize the hashlet pool
-    hash->pool_size  = 0;
+    hash->pool_size  =
     hash->pool_index = 0;
-
 }
 
 // allocate a hashlet for a linked list, increase the size
@@ -45,28 +45,25 @@ struct cHashlet *cHash_allocate_hashlet(cHash *hash) {
         // allocate more hashlets
         // NOTE: the original pointer to the hashlet pool is overwritten
         if(!(hash->hashlet_pool
-                    = (cHashlet *) malloc(CHASH_POOL * sizeof(cHashlet)))) {
-            fprintf(stderr, "Unable to allocate additional RAM for the hashlet pool.\n");
-            exit(1);
-        }
+                    = (cHashlet *) malloc(CHASH_POOL * sizeof(cHashlet))))
+            cHash_fatal_error("Unable to allocate additional RAM for the hashlet pool.\n");
 
         // reset the counters
         hash->pool_size  = CHASH_POOL;
         hash->pool_index = 0;
     }
 
-    // return the pointer to an empty hashlet
+    // return the pointer to an empty hashlet and increment the index
     return (struct cHashlet *)&hash->hashlet_pool[hash->pool_index++];
 }
 
 // compute the Jenkins hash of 'length' bytes located at *key
 CHASH_CHASH cHash_hash(char *key, CHASH_INTEGER length) {
 
-    CHASH_INTEGER i;
-    CHASH_CHASH hash;
+    CHASH_CHASH hash = 0;
 
-    for(hash = i = 0; i < length; i++) {
-        hash += key[i];
+    while(length--) {
+        hash += key[length];
         hash += (hash << 10);
         hash ^= (hash >> 6); 
     }   
@@ -89,29 +86,28 @@ void cHash_set(cHash *hash, char *key, long value) {
 
     #ifdef statistics
     // self-explanatory
-    CHASH_INTEGER chain_length = 0;
+    CHASH_INTEGER list_length = 0;
     cHashlet *head_hashlet = hashlet;
     #endif
 
     // if index is unused, initialize it
     if(hashlet->next == CHASH_EMPTY) {
-
         // store the key
         hashlet->key = hkey;
         // store the value
         hashlet->value = value;
-        // set the .next to indicate the end of the hashlet chain
+        // end the hashlet list
         hashlet->next = CHASH_SET;
-        // done
+
         return;
     }
 
-    // if the index is used, loop through the chain
+    // if the index is used, loop through the linked list
     while(1) {
 
         #ifdef statistics
         // self-explanatory
-        chain_length++;
+        list_length++;
         #endif
 
         // if the key exactly matches an existing key, overwrite the value
@@ -120,7 +116,7 @@ void cHash_set(cHash *hash, char *key, long value) {
             return;
         }
 
-        // stop when the end of the chain has been reached
+        // stop when the end of the list has been reached
         if(hashlet->next == CHASH_SET)
             break;
 
@@ -132,18 +128,18 @@ void cHash_set(cHash *hash, char *key, long value) {
     /* new key-value pair */
 
     #ifdef statistics
-    // update the chain length and store it in the head hashlet
-    head_hashlet->chain_length = ++chain_length;
+    // update the list length and store it in the head hashlet
+    head_hashlet->list_length = ++list_length;
     #endif
 
-    // appropriate the RAM and attach the newly-created hashlet to the chain
+    // appropriate the RAM and attach the newly-created hashlet to the list
     hashlet = (cHashlet *)(hashlet->next = cHash_allocate_hashlet(hash));
 
     // store the key
     hashlet->key = hkey;
     // store the value
     hashlet->value = value;
-    // set the .next to indicate the end of the hashlet chain
+    // set the .next to indicate the end of the hashlet list
     hashlet->next = CHASH_SET;
 
 }
@@ -161,14 +157,14 @@ long cHash_get(cHash *hash, char *key) {
     if(hashlet->next == CHASH_EMPTY)
         return CHASH_FALSE;
 
-    // otherwise, travel down the chain
+    // otherwise, travel down the list
     while(1) {
 
         // if the hash of the key matches, return the value
         if(hashlet->key == hkey)
             return hashlet->value;
 
-        // stop when the end of the chain has been reached
+        // stop when the end of the list has been reached
         if(hashlet->next == CHASH_SET)
             break;
 
