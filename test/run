@@ -1,0 +1,24 @@
+#!/bin/bash
+
+file="report.txt"
+
+./test 2> numbers.txt | tee $file
+echo | tee -a $file
+echo | tee -a $file
+echo "Linked list length statistics" | tee -a $file
+echo "  minimum : "`./min numbers.txt` | tee -a $file
+echo "  mean    : "`./mean numbers.txt` | tee -a $file
+echo "  median  : "`./median numbers.txt` | tee -a $file
+echo "  mode    : "`./mode numbers.txt` | tee -a $file
+echo "  maximum : "`./max numbers.txt` | tee -a $file
+echo | tee -a $file
+echo "  distribution: (length count)" | tee -a $file
+echo | tee -a $file
+awk '{ if (++n[$0] > max) max = n[$0] } END { for (x in n) { k="|"; for(i=0; i++<40*n[x]/max-1;) k = k "*"; printf "%3d %5d %s\n", x, n[x], k} }' < numbers.txt | sort -n | tee -a $file
+rm numbers.txt
+
+echo
+echo
+echo "This output is stored in $file"
+echo
+echo

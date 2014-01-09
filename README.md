@@ -39,7 +39,7 @@ make
 To run the test suite:
 ```bash
 cd test
-make
+./run
 ```
 The test creates a hash table and injects it with random key-value pairs. Linked
 list lengh statistics are computed.
