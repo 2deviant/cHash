@@ -88,7 +88,7 @@ int main() {
         // if the hashlet is utilized 
         if(hash.hashlets[i].next)
             // print the lenght of the linked list
-            fprintf(stderr, "%ld\n", hash.hashlets[i].chain_length);
+            fprintf(stderr, "%ld\n", hash.hashlets[i].list_length);
 
     return 0;
 }
