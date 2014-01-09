@@ -1,10 +1,10 @@
 # cHash
 cHash is a C hash table implementation.
-
-
 ## Use
 ### Code
 ```C
+// example.c
+
 #include <chash.h>
 
 int main() {
@@ -12,7 +12,7 @@ int main() {
     // declaration
     cHash products;
 
-    // initialization with 137 primary buckets
+    // initialization with 137 buckets (a.k.a. head hashlets)
     cHash_init(&products, 137);
 
     // set
@@ -48,6 +48,11 @@ list lengh statistics are computed.
 The hash table is implemented using separate chaining with linked lists.  The
 table does not store the key, only the Jenkins hash of the key for hash
 collision resolution.  Linked lists are allocated dynamically in increments of
-`CHASH_POOL` links found in `chash.h` at a time once the RAM pool has been
-exhaused.
+`CHASH_POOL` hashlets (found in `chash.h`) once the RAM pool has been exhaused.
+The amount of buckets (a.k.a. head hashlets) is static (137 in the example
+above).
+
+## Further Development
+Dynamic resizing: if the average linked list exceeds, say, three hashlets,
+double the amount of head hashlets (a.k.a. buckets).
 
