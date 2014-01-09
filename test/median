@@ -1,0 +1,41 @@
+#!/usr/bin/perl
+use strict;
+
+my (@numbers, @sorted, $n, $mode);
+
+# collect the numbers into an array
+push @numbers, split /\s+/ while <>;
+
+# numerical sort, without { $a <=> $b } it will be alphabetical
+@sorted = sort { $a <=> $b } @numbers;
+
+# array length - 1
+$n = $#sorted;
+
+# if we have an even number of elements, average the two middle ones
+# otherwise just use the middle element
+print (($n % 2
+    ? (@sorted[($n-1)/2] + @sorted[($n+1)/2])/2
+    :  @sorted[$n/2])."\n");
+
+
+=head1 NAME
+
+median - compute the median.
+
+=head1 SYNOPSIS
+
+B<median> < I<file>
+
+cat I<file> | B<median>
+    
+=head1 DESCRIPTION
+
+Computes the median of a list of decimal numbers piped in from the
+standard input and separated by spaces, tabs, and/or newlines.
+
+=head1 AUTHOR
+
+Val Tenyotkin B<<val@tenyotk.in>>
+
+=cut

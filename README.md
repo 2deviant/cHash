@@ -3,8 +3,9 @@ cHash is a C hash table implementation.
 
 
 ## Use
+### Code
 ```C
-#include "chash.h"
+#include <chash.h>
 
 int main() {
 
@@ -25,8 +26,32 @@ int main() {
     return 0;
 }
 ```
+### Compilation
+```bash
+gcc -I. chash.c example.c -o example
+```
+If the code is complied in Darwin (e.g. OS X), add `-DOSX`:
+```bash
+gcc -DOSX -I. chash.c example.c -o example
+```
+If desired, `chash.c` can be precompiled.
+### Testing
+To compile the test suite:
+```bash
+make
+```
+To run the test suite:
+```bash
+cd test
+make
+```
+The test creates a hash table and injects it with random key-value pairs. Linked
+list lengh statistics are computed.
 
 ## Technical Details
-The hash table is implemented with separate chaining and linked lists.  Jnkins
-hashing function is utilized. The table does not store the key, only the hash of
-the key. 
+The hash table is implemented using separate chaining with linked lists.  The
+table does not store the key, only the Jenkins hash of the key for hash
+collision resolution.  Linked lists are allocated dynamically in increments of
+`CHASH_POOL` links found in `chash.h` at a time once the RAM pool has been
+exhaused.
+

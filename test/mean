@@ -1,0 +1,49 @@
+#!/usr/bin/perl
+use strict;
+
+my ($s, $n) = (0, 0);
+
+# loop until the end of standard input
+while(<>) {
+    # add all numbers in a line and count them
+    #
+    # NOTE:
+    #   $n++ and $s += $_
+    # or
+    #   $s += $_ and $n++
+    # or
+    #   $s += $_ and ++$n
+    # will not work because if the expression on the left returns the Perl
+    # version of FALSE, e.g. zero, the second expression is not executed.  $n++
+    # returns zero on first call because $n = 0; $s += $_ can return zero at any
+    # time $s is zero; ++$n necessarily returns a positive integer.
+
+    ++$n and $s += $_ for split /\s+/;
+}
+
+# compute the mean
+$s /= $n;
+
+# print the mean
+print "$s\n";
+
+=head1 NAME
+
+mean - compute the mean.
+
+=head1 SYNOPSIS
+
+B<mean> < I<file>
+
+cat I<file> | B<mean>
+    
+=head1 DESCRIPTION
+
+Computes the mean of a list of decimal numbers piped in from the
+standard input and separated by spaces, tabs, and/or newlines.
+
+=head1 AUTHOR
+
+Val Tenyotkin B<<val@tenyotk.in>>
+
+=cut

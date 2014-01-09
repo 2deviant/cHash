@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+use strict;
+
+# very small number
+my $m = -1e100;
+
+# loop until the end of standard input
+while(<>) {
+    # feast your eyes at terse Perl
+    $_ > $m and $m = $_ for split /\s+/;
+}
+
+# "convert" to a number
+$m += 0;
+
+# print out the maximum
+print "$m\n";
+
+=head1 NAME
+
+max - find the largest number.
+
+=head1 SYNOPSIS
+
+B<max> < I<file>
+
+cat I<file> | B<max>
+    
+=head1 DESCRIPTION
+
+Finds the maximum decimal number in a list piped in from the
+standard input and separated by spaces, tabs, and/or newlines.
+
+=head1 AUTHOR
+
+Val Tenyotkin B<<val@tenyotk.in>>
+
+=cut

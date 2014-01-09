@@ -1,0 +1,14 @@
+./test 2> numbers.txt
+echo
+echo
+echo "Linked list length statistics"
+echo "  minimum : "`./min numbers.txt`
+echo "  mean    : "`./mean numbers.txt`
+echo "  median  : "`./median numbers.txt`
+echo "  mode    : "`./mode numbers.txt`
+echo "  maximum : "`./max numbers.txt`
+echo
+echo "Distribution: (length, count)"
+echo
+awk '{ if (++n[$0] > max) max = n[$0] } END { for (x in n) { k=""; for(i=0; i++<40*n[x]/max;) k = k "*"; printf "%3d %5d %s\n", x, n[x], k} }'  < numbers.txt  | sort -n
+rm numbers.txt

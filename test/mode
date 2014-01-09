@@ -1,0 +1,47 @@
+#!/usr/bin/perl
+use strict;
+
+# counters
+my ($mode, $count) = (0, 0);
+
+# hash
+my $numbers;
+
+
+# loop until the end of standard input
+while(<>) {
+    # if number of times $_ has occurred is more than any previous datum
+    ++$numbers->{$_} > $count
+        # set the count to the count of this datum
+        and $count = $numbers->{$_} 
+        # and set the mode to this datum
+        and $mode = $_
+    # for every number in a line
+    for split /\s+/;
+}
+
+# print out the mode
+print "$mode\n";
+
+=head1 NAME
+
+mode - find the mode.
+
+=head1 SYNOPSIS
+
+B<mode> < I<file>
+
+cat I<file> | B<mode>
+    
+=head1 DESCRIPTION
+
+Finds the mode in a list piped in from the
+standard input and separated by spaces, tabs, and/or newlines.
+
+List need not consist of integers, any data will do.
+
+=head1 AUTHOR
+
+Val Tenyotkin B<<val@tenyotk.in>>
+
+=cut
