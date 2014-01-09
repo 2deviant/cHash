@@ -8,7 +8,7 @@ echo "  median  : "`./median numbers.txt`
 echo "  mode    : "`./mode numbers.txt`
 echo "  maximum : "`./max numbers.txt`
 echo
-echo "Distribution: (length, count)"
+echo "  distribution: (length count)"
 echo
-awk '{ if (++n[$0] > max) max = n[$0] } END { for (x in n) { k=""; for(i=0; i++<40*n[x]/max;) k = k "*"; printf "%3d %5d %s\n", x, n[x], k} }'  < numbers.txt  | sort -n
+awk '{ if (++n[$0] > max) max = n[$0] } END { for (x in n) { k="|"; for(i=0; i++<40*n[x]/max-1;) k = k "*"; printf "%3d %5d %s\n", x, n[x], k} }' < numbers.txt | sort -n
 rm numbers.txt
