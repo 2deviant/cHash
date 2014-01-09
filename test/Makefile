@@ -5,3 +5,5 @@ all:
 	@echo "This output is stored in report.txt"
 	@echo
 	@echo
+clean:
+	- rm report.txt numbers.txt
