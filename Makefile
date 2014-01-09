@@ -1,5 +1,5 @@
 compiler=gcc
-options=-Wall -I. -Dstatistics
+options=-O3 -Wall -I. -Dstatistics
 
 all: test/test example
 
