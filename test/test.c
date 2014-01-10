@@ -26,19 +26,26 @@ int main() {
 
 
     /**************************************************************************/
-    /*** Dump a lot of random key-value pairs into the hash table *************/
+    /*** Dump a lot of key-value pairs into the hash table ********************/
     /**************************************************************************/
 
     // notification
-    printf("Inserting %ld random key-value pairs...\n", (long)KEY_VALUE_PAIRS);
+    printf("Inserting %ld random and sequential key-value pairs...\n",
+            (long)KEY_VALUE_PAIRS*2);
 
     // explicit seed to insure reproducibility of the pseudo-random sequence
     srand(seed);
 
     // self-explanatory
     for(i = 0; i < KEY_VALUE_PAIRS; i++) {
+
+        // random key
         random_key(key);
         cHash_set(&hash, key, rand());
+
+        // sequential key
+        sprintf(key, "%d", i);
+        cHash_set(&hash, key, i);
     }
 
     /**************************************************************************/
@@ -47,18 +54,26 @@ int main() {
 
     // notification
     printf("Extracting %ld key-value pairs from above...\n",
-            (long)KEY_VALUE_PAIRS);
+            (long)KEY_VALUE_PAIRS*2);
 
     // explicit seed to insure reproducibility of the pseudo-random sequence
     srand(seed);
 
     // self-explanatory
     for(i = 0; i < KEY_VALUE_PAIRS; i++) {
+        // random key
         random_key(key);
         expected = rand();
-        value = cHash_get(&hash, key);
+        cHash_get(&hash, key, &value);
         if(expected != value)
-            printf("Error: %s should be %ld but, is %ld instead\n",
+            printf("Error: %s should be %ld but, is %ld instead.\n",
+                    key, expected, value);
+        // sequential key
+        sprintf(key, "%d", i);
+        expected = i;
+        cHash_get(&hash, key, &value);
+        if(expected != value)
+            printf("Error: %s should be %ld but, is %ld instead.\n",
                     key, expected, value);
     }
 
@@ -75,12 +90,63 @@ int main() {
         // the probability of a repeated ten-digit sequence is vanishingly small
         // however, a space is added just to be 100% sure
         random_key(key); key[1] = ' ';
-        if(cHash_get(&hash, key))
+        if(cHash_get(&hash, key, &value))
             printf("Error.  This key should not exist: %s\n", key);
     }
 
     /**************************************************************************/
-    /*** Attempt to extract keys that should not exist ************************/
+    /*** Overwrite all keys ***************************************************/
+    /**************************************************************************/
+
+    // notification
+    printf("Overwriting %ld random and sequential key-value pairs...\n",
+            (long)KEY_VALUE_PAIRS*2);
+
+    // explicit seed to insure reproducibility of the pseudo-random sequence
+    srand(seed);
+
+    // self-explanatory
+    for(i = 0; i < KEY_VALUE_PAIRS; i++) {
+
+        // random key
+        random_key(key);
+        cHash_set(&hash, key, (1-rand()) * 0xdeadbeef);
+
+        // sequential key
+        sprintf(key, "%d", i);
+        cHash_set(&hash, key, (1-i) * 0xfeedface);
+    }
+
+    /**************************************************************************/
+    /*** Extract the overwritten key-value pairs from above *******************/
+    /**************************************************************************/
+
+    // notification
+    printf("Extracting %ld overwritten key-value pairs from above...\n",
+            (long)KEY_VALUE_PAIRS*2);
+
+    // explicit seed to insure reproducibility of the pseudo-random sequence
+    srand(seed);
+
+    // self-explanatory
+    for(i = 0; i < KEY_VALUE_PAIRS; i++) {
+        // random key
+        random_key(key);
+        expected =  (1-rand()) * 0xdeadbeef;
+        cHash_get(&hash, key, &value);
+        if(expected != value)
+            printf("Error: %s should be %ld but, is %ld instead.\n",
+                    key, expected, value);
+        // sequential key
+        sprintf(key, "%d", i);
+        expected = (1-i) * 0xfeedface;
+        cHash_get(&hash, key, &value);
+        if(expected != value)
+            printf("Error: %s should be %ld but, is %ld instead.\n",
+                    key, expected, value);
+    }
+    /**************************************************************************/
+    /*** Output the length of each linked list ********************************/
     /**************************************************************************/
 
     // loop through head hashlets
