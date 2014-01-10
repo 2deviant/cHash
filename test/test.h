@@ -2,7 +2,7 @@
 
 #define MAX_KEY_LEN     128
 #define HEAD_HASHLETS   10007
-#define KEY_VALUE_PAIRS 100000
+#define KEY_VALUE_PAIRS 50000
 
 // create a random ASCII key
 void random_key(char *key) {
