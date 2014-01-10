@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define CHASH_TRUE      1
 #define CHASH_FALSE     0
 #define CHASH_INTEGER   long
 #define CHASH_CHASH     uint64_t
@@ -78,6 +79,6 @@ CHASH_CHASH cHash_hash(char *key, CHASH_INTEGER length);
 void cHash_set(cHash *hash, char *key, long value);
 
 // get
-long cHash_get(cHash *hash, char *key);
+int cHash_get(cHash *hash, char *key, long *value);
 
 #endif

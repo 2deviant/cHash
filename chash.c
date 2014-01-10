@@ -143,9 +143,8 @@ void cHash_set(cHash *hash, char *key, long value) {
     hashlet->next = CHASH_SET;
 
 }
-
 // get
-long cHash_get(cHash *hash, char *key) {
+int cHash_get(cHash *hash, char *key, long *value) {
 
     // hash the key
     CHASH_CHASH hkey = cHash_hash(key, strlen(key));
@@ -161,8 +160,10 @@ long cHash_get(cHash *hash, char *key) {
     while(1) {
 
         // if the hash of the key matches, return the value
-        if(hashlet->key == hkey)
-            return hashlet->value;
+        if(hashlet->key == hkey) {
+            *value = hashlet->value;
+            return CHASH_TRUE;
+        }
 
         // stop when the end of the list has been reached
         if(hashlet->next == CHASH_SET)

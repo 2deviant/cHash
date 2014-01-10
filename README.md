@@ -9,6 +9,8 @@ cHash is a hash table implementation in C.
 
 int main() {
 
+    long count;
+
     // declaration
     cHash products;
 
@@ -21,7 +23,14 @@ int main() {
     cHash_set(&products, "Hoe", 951);
 
     // get
-    printf("%ld axes are in stock.\n", cHash_get(&products, "Axe"));
+    cHash_get(&products, "Axe", &count);
+    printf("%ld Axes are in stock.\n", count);
+
+    // check if the key exists
+    if(cHash_get(&products, "Fly", &count))
+        printf("%ld Flies are in stock.\n", count);
+    else
+        printf("It appears that we do not carry Flies.\n");
 
     return 0;
 }
